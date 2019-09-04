@@ -220,7 +220,11 @@ public class Main {
         int w = in.getWidth();
         int h = in.getHeight();
         BufferedImage out = new BufferedImage(w, h, TYPE_INT_RGB);
-        
+        for(int x = 0; x < w - 1; x++) {
+            for(int y = 0; y < h; y++) {
+                out.setRGB(x, y, in.getRGB(w - x - 1, y));
+            }
+        }
         return out;
     }
     
@@ -245,15 +249,18 @@ public class Main {
             BufferedImage outEd = imageEdge(imageIn);
             BufferedImage outRa = imageRandom16(imageIn);
             BufferedImage outSq = imageSquare(imageIn);
+            BufferedImage outRh = imageReverseH(imageIn);
             File outGray = new File("outGray.png");
             File outEdge = new File("outEdge.png");
             File outRand = new File("outRand.png");
             File outSqua = new File("outSqua.png");
+            File outRevh = new File("outRevh.png");
             try {
                 ImageIO.write(outBW, "png", outGray);
                 ImageIO.write(outEd, "png", outEdge);
                 ImageIO.write(outRa, "png", outRand);
                 ImageIO.write(outSq, "png", outSqua);
+                ImageIO.write(outRh, "png", outRevh);
             }
             catch(IOException e) {
                 System.out.println(e.toString());
@@ -263,17 +270,43 @@ public class Main {
             }
         }
         else {
-            System.out.println("Enter the number for the image change"); 
-            //entry = "0";
-            
+            System.out.println("Enter the number for the image change: ");
+            System.out.println("1 : BlackNWhite");
+            System.out.println("2 : Edge");
+            System.out.println("3 : Random16");
+            System.out.println("4 : Square");
+            System.out.println("5 : ReverseH");
             entry = in.nextLine();
             switch(entry) {
                 case "1":
+                    imageOut = imageBlackNWhite(imageIn);
+                    break;
+                case "2":
+                    imageOut = imageEdge(imageIn);
+                    break;
+                case "3":
+                    imageOut = imageRandom16(imageIn);
+                    break;
+                case "4":
+                    imageOut = imageSquare(imageIn);
+                    break;
+                case "5":
+                    imageOut = imageReverseH(imageIn);
                     break;
                 default:
-                    break;
-                    
+
+                    break;        
             }
+            System.out.println("Enter the name of the new file: ");
+            entry = in.nextLine();
+            File out = new File(entry);
+            try {
+                ImageIO.write(imageOut, "png", out);
+            }
+            catch(IOException e) {
+                System.out.println(e.toString());
+            }
+            
         }
     }
 }
