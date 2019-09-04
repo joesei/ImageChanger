@@ -4,49 +4,65 @@ import java.awt.image.BufferedImage;
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 
 /* 
 @author Jose M. Hernandez
-Notes:A
+Notes:A  
 */
 public class Main {
     
     //Convert int to RGB values in Color object
     public static Color intToRGB(int i) {
-        int r, g, b;
+        int a, r, g, b;
         //Gets the binary string representation of the integer with 24 bits
         String binary = Integer.toBinaryString(i);
-        while(binary.length() < 24) {
+        //System.out.println(i);
+        //System.out.println(binary);
+        //System.out.println(Integer.parseInt(binary, 2));
+        while(binary.length() < 32) {
             binary = "0" + binary;
         }
         //Then split into seperate R G B binary strings
         //Bits 0-7 are Red, 8-15 Blue, 16-23 Green
         //Convert those substrings back to int
-        r = Integer.parseInt(binary.substring(0, 7), 2);
-        g = Integer.parseInt(binary.substring(8, 15), 2);
-        b = Integer.parseInt(binary.substring(16, 23), 2);
-        return new Color(r, g, b);
+        a = Integer.parseInt(binary.substring(0, 8), 2);
+        r = Integer.parseInt(binary.substring(8, 16), 2);
+        g = Integer.parseInt(binary.substring(16, 24), 2);
+        b = Integer.parseInt(binary.substring(24, 32), 2);
+        return new Color(r, g, b, a);
     }
     
     //Convert RGB values to int
     public static int RGBtoInt(Color rgb) {
-        String r = Integer.toBinaryString(rgb.getRed());
-        String g = Integer.toBinaryString(rgb.getGreen());
-        String b = Integer.toBinaryString(rgb.getBlue());
-        while(r.length() < 8 || g.length() < 8 || b.length() < 8) {
-            if(r.length() < 8) {
-                r = "0" + r;
+        if(rgb != null) {
+            String a = Integer.toBinaryString(rgb.getAlpha());
+            String r = Integer.toBinaryString(rgb.getRed());
+            String g = Integer.toBinaryString(rgb.getGreen());
+            String b = Integer.toBinaryString(rgb.getBlue());
+            while(r.length() < 8 || g.length() < 8 || b.length() < 8 || a.length() < 8) {
+                if(r.length() < 8) {
+                    r = "0" + r;
+                }
+                if(g.length() < 8) {
+                    g = "0" + g;
+                }
+                if(b.length() < 8) {
+                    b = "0" + b;
+                }
+                if(a.length() < 8) {
+                    a = "0" + a;
+                }
             }
-            if(g.length() < 8) {
-                g = "0" + g;
-            }
-            if(b.length() < 8) {
-                b = "0" + b;
-            }
+            //+ is normal - is reverse rgb;
+            a = "+0000000";
+            //a = "-0000000";
+            return Integer.parseInt(a + r + g + b, 2);
         }
-        return Integer.parseInt(r + g + b, 2);
+        return 0;
     }
     
     //Get RGB int values from image into Color object
@@ -127,39 +143,136 @@ public class Main {
         return out;
     }
     
+    //Splits image into 16 squares and randomizes the placement
+    public static BufferedImage imageRandom16(BufferedImage in) {
+        int w = in.getWidth();
+        int h = in.getHeight();
+        int wdiv = w / 4;
+        int hdiv = h / 4;
+        int r1, r2, j, k, i;            
+        BufferedImage out = new BufferedImage(w, h, TYPE_INT_RGB);
+        Color[][] rgbBase = getRGBs(in);
+        //Pair is the coords of a single square
+        String pair;
+        List<String> pairs = new ArrayList<>();
+        //Get the 16 squares
+        j = k = i = 0;
+        while(pairs.size() < 16) {
+            r1 = (int) (Math.random() * 4);
+            r2 = (int) (Math.random() * 4);
+            pair = Integer.toString(r1) + Integer.toString(r2);
+            if(!pairs.contains(pair)) {
+                pairs.add(pair);             
+                for(int x = 0; x < wdiv; x++) {
+                    for(int y = 0; y < hdiv; y++) {
+                        out.setRGB(x + (j * wdiv), y + (k * hdiv), RGBtoInt(rgbBase[x + (r1 * wdiv)][y + (r2 * hdiv)]));
+                    }
+                }  
+                i++;
+                j = i % 4;
+                if(i % 4 == 0) {
+                    k++;
+                }
+            }
+        }
+        return out;
+    }
+    
+    public static BufferedImage imageSquare(BufferedImage in) {
+        int w = in.getWidth();
+        int h = in.getHeight();
+        int square = 10;
+        int squaresW = in.getWidth() / square;
+        int squaresH = in.getHeight() / square;
+        int sumR, sumG, sumB, i, j, k; 
+        int r, g, b;
+        Color[][] rgbBase = getRGBs(in);
+        BufferedImage out = new BufferedImage(w, h, TYPE_INT_RGB);
+        i = j = k = 0;
+        while(i < (squaresW * squaresH)) {
+            sumR = sumG = sumB = 0;
+            for(int x = 0; x < square; x++) {
+                for(int y = 0; y < square; y++) {
+                    sumR += rgbBase[x + (j * square)][y + (k * square)].getRed();
+                    sumG += rgbBase[x + (j * square)][y + (k * square)].getGreen();
+                    sumB += rgbBase[x + (j * square)][y + (k * square)].getBlue();
+                }       
+            }
+            r = sumR / (square * square);
+            g = sumG / (square * square);
+            b = sumB / (square * square);
+            for(int x = 0; x < square; x++) {
+                for(int y = 0; y < square; y++) {
+                    out.setRGB(x + (j * square), y + (k * square), RGBtoInt(new Color(r, g, b)));
+                }       
+            }         
+            i++;
+            j = i % squaresW;
+            if(i % squaresW == 0) {
+                k++;
+            }
+        }
+        
+        return out;
+    }
+    
+    public static BufferedImage imageReverseH(BufferedImage in) {
+        int w = in.getWidth();
+        int h = in.getHeight();
+        BufferedImage out = new BufferedImage(w, h, TYPE_INT_RGB);
+        
+        return out;
+    }
+    
     public static void main(String[] args) {
+        boolean debug = true;
         
         System.out.println("Enter the name of the file: ");
         Scanner in = new Scanner(System.in);
         String entry = in.nextLine();
         File imageFile = new File(entry);
-        BufferedImage image = null,imageOut = null;
-        int width, height;
+        BufferedImage imageIn = null, imageOut = null;
         try {
-            image = ImageIO.read(imageFile);
+            imageIn = ImageIO.read(imageFile);
         }
         catch(IOException e) {
             System.out.println(e.toString());
             System.out.println("Could not read image " + entry);
         }
-        finally {
-            if(image != null) {
-                width = image.getWidth();
-                height = image.getHeight();
-                BufferedImage outBW = imageBlackNWhite(image);
-                BufferedImage outEd = imageEdge(image);
-                File outGray = new File("outBlackNWhite.png");
-                File outEdge = new File("outEdge.png");
-                try {
-                    boolean write = ImageIO.write(outBW, "png", outGray);
-                    boolean write1 = ImageIO.write(outEd, "png", outEdge);
-                }
-                catch(IOException e) {
-                    System.out.println(e.toString());
-                }
-                finally {
-                    System.out.println("Yeet");
-                }
+
+        if(debug) {
+            BufferedImage outBW = imageBlackNWhite(imageIn);
+            BufferedImage outEd = imageEdge(imageIn);
+            BufferedImage outRa = imageRandom16(imageIn);
+            BufferedImage outSq = imageSquare(imageIn);
+            File outGray = new File("outGray.png");
+            File outEdge = new File("outEdge.png");
+            File outRand = new File("outRand.png");
+            File outSqua = new File("outSqua.png");
+            try {
+                ImageIO.write(outBW, "png", outGray);
+                ImageIO.write(outEd, "png", outEdge);
+                ImageIO.write(outRa, "png", outRand);
+                ImageIO.write(outSq, "png", outSqua);
+            }
+            catch(IOException e) {
+                System.out.println(e.toString());
+            }
+            finally {
+                System.out.println("Yeet");
+            }
+        }
+        else {
+            System.out.println("Enter the number for the image change"); 
+            //entry = "0";
+            
+            entry = in.nextLine();
+            switch(entry) {
+                case "1":
+                    break;
+                default:
+                    break;
+                    
             }
         }
     }
