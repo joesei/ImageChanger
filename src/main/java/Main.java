@@ -228,6 +228,31 @@ public class Main {
         return out;
     }
     
+    public static BufferedImage imageTest(BufferedImage in) {
+        int w = in.getWidth();
+        int h = in.getHeight();
+        BufferedImage out = new BufferedImage(w, h, TYPE_INT_RGB);
+        Color[][] rgb = getRGBs(in);
+        int r, g, b;
+        for(int x = 0; x < w; x++) {
+            for(int y = 0; y < h; y++) {
+                r = rgb[x][y].getRed();
+                g = rgb[x][y].getGreen();
+                b = rgb[x][y].getBlue();
+                if(r + g + b >= 415) {
+                    r = (r - 150 < 0) ? 0 : r - 150;
+                    g = (g - 100 < 0) ? 0 : g - 100;
+                    b = (b - 75 < 0) ? 0 : b - 75;
+                    out.setRGB(x, y, RGBtoInt(new Color(r, g, b)));
+                }
+                else {
+                    out.setRGB(x, y, RGBtoInt(rgb[x][y]));
+                }
+            }
+        }
+        return out;
+    }
+    
     public static void main(String[] args) {
         boolean debug = true;
         
@@ -250,17 +275,20 @@ public class Main {
             BufferedImage outRa = imageRandom16(imageIn);
             BufferedImage outSq = imageSquare(imageIn);
             BufferedImage outRh = imageReverseH(imageIn);
+            BufferedImage outTe = imageTest(imageIn);
             File outGray = new File("outGray.png");
             File outEdge = new File("outEdge.png");
             File outRand = new File("outRand.png");
             File outSqua = new File("outSqua.png");
             File outRevh = new File("outRevh.png");
+            File outTest = new File("outTest.png");
             try {
                 ImageIO.write(outBW, "png", outGray);
                 ImageIO.write(outEd, "png", outEdge);
                 ImageIO.write(outRa, "png", outRand);
                 ImageIO.write(outSq, "png", outSqua);
                 ImageIO.write(outRh, "png", outRevh);
+                ImageIO.write(outTe, "png", outTest);
             }
             catch(IOException e) {
                 System.out.println(e.toString());
